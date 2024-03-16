@@ -12,7 +12,7 @@ Library    BuiltIn
 *** Variables ***
 
 ${MyHostname}    demo5757
-${MyRepositoryName}    TMPWEBV497TC3856
+${MyRepositoryName}    TMPWEBV497TC3852
 # You must create the folder "MyFolderWorkspace" manually in the computer of Jenkins master, in case you test the script with the computer of Jenkins master
 ${MyFolderWorkspace}    C:/000/jenkins/workspace
 ${MyDirectoryDownload}    C:\\temp\\zDownload
@@ -49,6 +49,14 @@ ${MyPatient4BirthdateYYYY}    1967
 ${MyPatient4BirthdateMM}    10
 ${MyPatient4BirthdateDD}    29
 ${MyPatient4AccessionNumber}    CTEF149653
+
+${MyPatient5FamilyName}    AZ361875
+${MyPatient5FirstName}    DIDIER
+${MyPatient5SeriesDescription}    CTOP361875
+${MyPatient5BirthdateYYYY}    1969
+${MyPatient5BirthdateMM}    12
+${MyPatient5BirthdateDD}    13
+${MyPatient5AccessionNumber}    CTEF361875
 
 ${MyPortNumber}    10000
 #  Do not use the brackets to define the variable of bearer token
@@ -293,19 +301,35 @@ Delete All My Email Messages In SMTP Server
 Test01
     [Documentation]    Reset the test results
     [Tags]    CRITICALITY LOW
-    # Do not start SMTP server because no email is sent for this test
     Remove Files    ${MyFolderWorkspace}/${MyRepositoryName}/results/*.png
-    # Delete the links between the user accounts and the studies with this batch file
-    # Run    C:\\Users\\albert\\Desktop\\DELETE\\zBATCHzFILES\\DeleteLink.bat
 
 
 Test02
+    [Documentation]    Test and check SMTP server
+    [Tags]    CRITICALITY LOW
+    Open Browser    http://localhost:8070/    Chrome    options=add_argument("--disable-infobars");add_argument("--lang\=en");binary_location=r"C:\\000\\chromeWin64ForTests\\chrome.exe"
+    Maximize Browser Window
+    Wait Until Page Contains    FakeSMTPServer    timeout=15s
+    Wait Until Page Contains    Inbox    timeout=15s
+
+
+Test03
+    [Documentation]    Reset the list of email messages in SMTP server
+    [Tags]    CRITICALITY LOW
+    Delete All My Email Messages In SMTP Server
+    Sleep    2s
+    Go To    http://localhost:8070/
+    Sleep    1s
+    Close All Browsers
+
+
+Test04
     [Documentation]    Administrator connects to the website of TMP Web
     [Tags]    CRITICALITY NORMAL
     My User Opens Internet Browser And Connects To My TMP Web    ${TmpWebAdministratorLogin}    ${TmpWebAdministratorPassword}
 
 
-Test03
+Test05
     [Documentation]    Select the language
     [Tags]    CRITICALITY LOW
     Wait Until Element Is Visible    id=languageSelect    timeout=15s
@@ -314,166 +338,173 @@ Test03
     Click Element    id=searchInput
 
 
-Test04
-    [Documentation]    Open the table "Studies"
+Test06
+    [Documentation]    Select and open the option "Manage disk space"
     [Tags]    CRITICALITY NORMAL
     Wait Until Page Contains    Admin    timeout=15s
     Wait Until Element Is Visible    link=Admin    timeout=15s
     Click Link    link=Admin
-    Wait Until Page Contains    Assign studies    timeout=15s
-    Wait Until Element Is Visible    link=Assign studies    timeout=15s
-    Click Link    link=Assign studies
-
-
-Test05
-    [Documentation]    Find and select the first study
-    [Tags]    CRITICALITY NORMAL
-    Wait Until Page Contains    Studies    timeout=15s
-    Wait Until Element Is Visible    id=searchedValue    timeout=15s
-    Input Text    id=searchedValue     BC250764    clear=True
-    Wait Until Keyword Succeeds    15s    3s    Textfield Value Should Be    id=searchedValue     BC250764
-    Press Keys    id=searchedValue    ENTER
-    # Please not check that this study exists because TMP Tool Web is probably still processing the study (do not use "Wait Until Page Contains ...")
-
-
-Test06
-    [Documentation]    Click the button "Delete" to remove the study from the server
-    [Tags]    CRITICALITY HIGH
-    ${ContentsOfTable} =    Get Text  id=command
-    Log    ${ContentsOfTable}
-    Take My Screenshot
-    # ${StudyExists} =    Should Contain    ${ContentsOfTable}    BC250764
-    # Log    ${StudyExists}
-    # Locator of the link "Delete": xpath=(//a[contains(text(),'Delete')])[2] OR css=tbody a
-    Run Keyword If    'BC250764' in '''${ContentsOfTable}'''    Wait Until Element Is Visible    xpath=(//a[contains(text(),'Delete')])[2]    timeout=15s
-    Run Keyword If    'BC250764' in '''${ContentsOfTable}'''    Click Element    xpath=(//a[contains(text(),'Delete')])[2]
-    Run Keyword If    'BC250764' in '''${ContentsOfTable}'''    Handle Alert    action=ACCEPT    timeout=15s
-    Copy File    C:/000/jenkins/dicom/CT250764.dcm    ${MyDicomPath}
-    Sleep    4s
-    Element Should Be Visible    link=My Patients
-    Click Link    link=My Patients
-    Wait Until Page Contains   Birth Date    timeout=15s
-    Take My Screenshot
+    Wait Until Page Contains    Manage disk space    timeout=15s
+    Wait Until Element Is Visible    link=Manage disk space    timeout=15s
+    Click Link    link=Manage disk space
 
 
 Test07
-    [Documentation]    Find and select the second study
-    [Tags]    CRITICALITY NORMAL
-    Wait Until Element Is Visible    link=Admin    timeout=15s
-    Click Link    link=Admin
-    Wait Until Page Contains    Assign studies    timeout=15s
-    Wait Until Element Is Visible    link=Assign studies    timeout=15s
-    Click Link    link=Assign studies
-    Wait Until Page Contains    Studies    timeout=15s
-    Wait Until Element Is Visible    id=searchedValue    timeout=15s
-    Input Text    id=searchedValue     BC149653    clear=True
-    Wait Until Keyword Succeeds    15s    3s    Textfield Value Should Be    id=searchedValue     BC149653
-    Press Keys    id=searchedValue    ENTER
-    Wait Until Page Contains    ${MyPatient4FamilyName}^${MyPatient4FirstName}    timeout=15s
+    [Documentation]    Check the items of the page "Manage disk space" are valid
+    [Tags]    CRITICALITY HIGH
+    # Section 1 (Repository Stats)
+    Wait Until Page Contains    Repository Stats    timeout=15s
+    Wait Until Page Contains    Disk Free space    timeout=15s
+    Wait Until Page Contains    Disk Total space    timeout=15s
+    Wait Until Page Contains    Disk Occupation rate    timeout=15s
+    # Section 2 (Query size for unused data)
+    Wait Until Page Contains    Query size for unused data    timeout=15s
+    Wait Until Page Contains    Accession not seen for    timeout=15s
+    Wait Until Element Is Visible    id=consultationDelay    timeout=15s
+    Wait Until Page Contains    and with an acquisition date older than    timeout=15s
+    Wait Until Element Is Visible    id=aquisitionDelay    timeout=15s
+    Wait Until Page Contains    and with a publication date older than    timeout=15s
+    Wait Until Element Is Visible    id=publicationDelay    timeout=15s
+    Wait Until Page Contains    left blank to ignore this criteria    timeout=15s
+    # Locator of the button "Compute", the keyword (Wait Until Page Contains) does NOT detect the text "Compute"
+    Wait Until Element Is Visible    name=query    timeout=15s
+    Wait Until Page Contains    Number of studies    timeout=15s
+    Wait Until Page Contains    Approx. size of selected data    timeout=15s
+    # Locator of the button "View selection", the keyword (Wait Until Page Contains) does NOT detect the text "View selection"
+    Wait Until Element Is Visible    name=log    timeout=15s
+    # Section 3 (Perform clean-up)
+    Wait Until Page Contains    Perform clean-up    timeout=15s
+    Wait Until Page Contains    You can perform a clean up of the repository    timeout=15s
+    Wait Until Element Is Visible    name=delete    timeout=15s
 
 
 Test08
-    [Documentation]    Administrator assigns the study to the doctor's name
+    [Documentation]    Modify and configure the fields "Date of access", "Date of acquition" and "Date of publication"
     [Tags]    CRITICALITY HIGH
-    Wait Until Element Is Visible    id=displayedStudies0.isSelected1    timeout=15s
-    Element Should Be Visible    id=displayedStudies0.isSelected1
-    Click Element    id=displayedStudies0.isSelected1
-    Take My Screenshot
-    Wait Until Element Is Visible    id=txtSearch    timeout=15s
-    Element Should Be Visible    id=txtSearch
-    Input Text    id=txtSearch     Taylor ^ Thomas ^ (thomas)    clear=True
-    Wait Until Keyword Succeeds    15s    3s    Textfield Value Should Be    id=txtSearch     Taylor ^ Thomas ^ (thomas)
-    Press Keys    id=txtSearch    ENTER
-    Wait Until Element Is Visible    name=assign    timeout=15s
-    Element Should Be Visible    name=assign
-    # Do not click the button "Assign" because the list of doctor names hides the button, please press ENTER key after selecting the doctor name from the list
-    # Click Button    name=assign
-    Sleep    3s
+    Element Should Be Visible    id=consultationDelay
+    Clear element Text    id=consultationDelay
+    Sleep    1s
+    ${MyValue} =    Get Text    id=consultationDelay
+    Should Be Empty    ${MyValue}
+
+    Element Should Be Visible    id=aquisitionDelay
+    Input Text    id=aquisitionDelay    999    clear=True
+    Wait Until Keyword Succeeds    15s    3s    Textfield Value Should Be    id=aquisitionDelay    999
+
+    Element Should Be Visible    id=publicationDelay
+    Clear element Text    id=publicationDelay
+    Sleep    1s
+    ${MyValue} =    Get Text    id=publicationDelay
+    Should Be Empty    ${MyValue}
 
 
 Test09
-    [Documentation]    Administrator opens the second study
+    [Documentation]    Click the button "Compute" and then check the number of selected studies that will be deleted in the repository
     [Tags]    CRITICALITY NORMAL
-    Element Should Be Visible    link=My Patients
-    Click Link    link=My Patients
-    Wait Until Page Contains   Birth Date    timeout=15s
-    Wait Until Element Is Visible    id=searchInput    timeout=15s
-    Element Should Be Visible    id=searchInput
-    Input Text    id=searchInput    ${MyPatient4FamilyName}    clear=True
-    Wait Until Keyword Succeeds    15s    3s    Textfield Value Should Be    id=searchInput    ${MyPatient4FamilyName}
-    Press Keys    id=searchInput    ENTER
-    Wait Until Page Contains    ${MyPatient4FamilyName} ${MyPatient4FirstName}    timeout=15s
-    Click Link    link=${MyPatient4FamilyName} ${MyPatient4FirstName}
+    Element Should Be Visible    name=query
+    Click Button    name=query
+    Wait Until Page Contains    Number of studies:    timeout=15s
+    Wait Until Page Contains    1    timeout=15s
+    ${MyResult} =    Get Text    xpath=//*[@id="command"]/div[2]/div[4]/table/tbody/tr[1]/td[2]/b
+    Take My Screenshot
 
 
 Test10
-    [Documentation]    Administrator checks that the study has been assigned properly to the doctor's name
+    [Documentation]    Click the button "Clean up" to delete the studies in the repository
     [Tags]    CRITICALITY HIGH
-    Wait Until Page Contains    ${MyPatient4BirthdateDD}-${MyPatient4BirthdateMM}-${MyPatient4BirthdateYYYY}    timeout=15s
-    Wait Until Page Contains    Download the following study    timeout=15s
-    Wait Until Element Is Visible    link=DCM    timeout=15s
-    Wait Until Element Is Visible    link=JPG    timeout=15s
-    Wait Until Element Is Visible    link=${MyPatient4SeriesDescription}    timeout=15s
-    Wait Until Page Contains    Anonymous link:    timeout=15s
-    Wait Until Page Contains    Ordering physician:    timeout=15s
-    Wait Until Page Contains    Users allowed to view this study:    timeout=15s
-    Wait Until Page Contains    Thomas Taylor ( thomas )    timeout=15s
+    Element Should Be Visible    name=delete
+    Click Button    name=delete
+    Handle Alert    action=ACCEPT    timeout=15s
+    Wait Until Page Contains    Clean up success full    timeout=19s
     Take My Screenshot
-    Log Out My User Session Of TMP Web
-    Close Browser
 
 
 Test11
-    [Documentation]    The limited user account connects to the website of TMP Web
-    [Tags]    CRITICALITY NORMAL
-    My User Opens Internet Browser And Connects To My TMP Web    ${TmpWebUser4Login}    ${TmpWebUser4Password}
-
-
-Test12
-    [Documentation]    The limited user account searchs the study
-    [Tags]    CRITICALITY NORMAL
-    Wait Until Page Contains   My Patients    timeout=15s
+    [Documentation]    Find the study in TMP Web
+    [Tags]    CRITICALITY HIGH
+    Wait Until Element Is Visible    link=My Patients    timeout=15s
     Element Should Be Visible    link=My Patients
     Click Link    link=My Patients
     Wait Until Page Contains   Birth Date    timeout=15s
     Wait Until Element Is Visible    id=searchInput    timeout=15s
     Element Should Be Visible    id=searchInput
-    Input Text    id=searchInput    ${MyPatient4FamilyName}    clear=True
-    Wait Until Keyword Succeeds    15s    3s    Textfield Value Should Be    id=searchInput    ${MyPatient4FamilyName}
+    Input Text    id=searchInput    ${MyPatient5FamilyName}    clear=True
+    Wait Until Keyword Succeeds    15s    3s    Textfield Value Should Be    id=searchInput    ${MyPatient5FamilyName}
     Press Keys    id=searchInput    ENTER
-    Wait Until Page Contains    ${MyPatient4FamilyName} ${MyPatient4FirstName}    timeout=15s
-    Click Link    link=${MyPatient4FamilyName} ${MyPatient4FirstName}
+    Wait Until Page Contains    ${MyPatient5FamilyName} ${MyPatient5FirstName}    timeout=15s
+
+
+Test12
+    [Documentation]    The web page shows the message "Documents are not available"
+    [Tags]    CRITICALITY HIGH
+    Page Should Contain Link    link=${MyPatient5FamilyName} ${MyPatient5FirstName}    None    TRACE
+    Click Link    link=${MyPatient5FamilyName} ${MyPatient5FirstName}
+    Wait Until Page Contains    Documents are not available    timeout=15s
+    Take My Screenshot
 
 
 Test13
-    [Documentation]    Check that the second study has been assigned to the limited user account
-    [Tags]    CRITICALITY HIGH
-    Wait Until Page Contains    ${MyPatient4BirthdateDD}-${MyPatient4BirthdateMM}-${MyPatient4BirthdateYYYY}    timeout=15s
-    Wait Until Page Contains    Download the following study    timeout=15s
-    Wait Until Element Is Visible    link=DCM    timeout=15s
-    Wait Until Element Is Visible    link=JPG    timeout=15s
-    Wait Until Element Is Visible    link=${MyPatient4SeriesDescription}    timeout=15s
-    Wait Until Page Contains    Anonymous link:    timeout=15s
-    Wait Until Page Contains    Ordering physician:    timeout=15s
+    [Documentation]    Enter the email address and then click the button "Republish documents"
+    [Tags]    CRITICALITY NORMAL
+    Wait Until Page Contains    Email Address:    timeout=15s
+    Wait Until Element Is Visible    id=userEmail    timeout=15s
+    Wait Until Element Is Visible    id=republishActionButton    timeout=15s
+    Input Text    id=userEmail    ${TmpWebUser3Email}    clear=True
+    Wait Until Keyword Succeeds    15s    3s    Textfield Value Should Be    id=userEmail    ${TmpWebUser3Email}
+    Click Button    id=republishActionButton
+    # The application takes about 43s to publish the study again
+    Wait Until Page Contains    Documents are being published    timeout=99s
+    Sleep    19s
     Take My Screenshot
 
 
 Test14
+    [Documentation]    Once TMP Tool Web has published the study completely, check that the document is available on the web page
+    [Tags]    CRITICALITY NORMAL
+    Wait Until Page Contains    ${MyPatient5FamilyName} ${MyPatient5FirstName}    timeout=300s
+    Wait Until Page Contains    Download the following study    timeout=15s
+    Wait Until Element Is Visible    link=DCM    timeout=15s
+    Wait Until Element Is Visible    link=JPG    timeout=15s
+    Wait Until Element Is Visible    link=${MyPatient5SeriesDescription}    timeout=15s
+    Wait Until Page Contains    Anonymous link:    timeout=15s
+    Wait Until Page Contains    Ordering physician:    timeout=15s
+    Sleep    2s
+    Take My Screenshot
+
+
+Test15
     [Documentation]    Open the series with the image viewer
     [Tags]    CRITICALITY NORMAL
-    Element Should Be Visible    link=${MyPatient4SeriesDescription}
-    Click Link    link=${MyPatient4SeriesDescription}
+    Element Should Be Visible    link=${MyPatient5SeriesDescription}
+    Click Link    link=${MyPatient5SeriesDescription}
     Wait Until Page Contains    Non-diagnostic quality    timeout=19s
     Wait Until Element Is Visible    link=Full screen    timeout=15s
-    Wait Until Page Contains    ${MyPatient4FamilyName} ${MyPatient4FirstName}    timeout=15s
+    Wait Until Page Contains    ${MyPatient5FamilyName} ${MyPatient5FirstName}    timeout=15s
     Wait Until Element Is Visible    link=DICOM download    timeout=15s
     Wait Until Element Is Visible    link=JPEG download    timeout=15s
     Sleep    4s
     Take My Screenshot
     Log Out My User Session Of TMP Web
+    Sleep    1s
 
 
-Test15
+Test16
+    [Documentation]    User receives the email message informing that the document is available in TMP Web
+    [Tags]    CRITICALITY NORMAL
+    Go To    http://localhost:8070/
+    Wait Until Page Contains    FakeSMTPServer    timeout=15s
+    Wait Until Page Contains    Inbox    timeout=15s
+    Wait Until Page Contains    ${TmpWebUser3Email}    timeout=15s
+    Wait Until Page Contains    Documents available online    timeout=15s
+    # CSS of the field "Documents available online"
+    Wait Until Element Is Visible    css=.MuiDataGrid-cell:nth-child(4) > .MuiDataGrid-cellContent    timeout=15s
+    Sleep    1s
+    Click Element    css=.MuiDataGrid-cell:nth-child(4) > .MuiDataGrid-cellContent
+    Wait Until Page Contains    Your documents are now available online    timeout=15s
+    Take My Screenshot
+
+
+Test17
     [Documentation]    Shut down the browser and reset the cache
     [Tags]    CRITICALITY LOW
     Close All Browsers
